@@ -1,0 +1,5 @@
+samplesheet: "test_sample_sheet.tsv"
+rundir: "mpx"
+scheme_directory: "NA"
+scheme_version: "1"
+scheme_name: "NA"

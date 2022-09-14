@@ -1,0 +1,6 @@
+name: viraligner
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - artic

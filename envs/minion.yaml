@@ -1,0 +1,8 @@
+name: minion
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - artic=1.2.1
+  - nanopolish

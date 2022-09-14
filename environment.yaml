@@ -1,0 +1,13 @@
+#name: viraligner
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - snakemake
+  - pysam
+  - pyyaml
+  - pandas
+  - pip
+  - openpyxl
+  - pip:
+    - xlrd # for xls

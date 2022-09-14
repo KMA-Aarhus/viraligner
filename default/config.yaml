@@ -1,0 +1,5 @@
+use-conda: True
+keep-going: False
+printshellcmds: True
+cores: 8
+

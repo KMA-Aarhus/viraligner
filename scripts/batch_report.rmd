@@ -1,0 +1,192 @@
+---
+title: "ONT batchsekventeringsrapport"
+
+output:
+  html_document:
+    toc: False
+    toc_depth: 2
+editor_options: 
+  chunk_output_type: console
+  cache: True
+css: "max-width: 5000px; margin: auto; padding: 1em; line-height: 20px"
+---
+<style type="text/css">
+.main-container {
+  max-width: 100% !important;
+  margin: auto;
+}
+</style>
+  
+```{r echo=F, message=F, warning=F}
+# Field variables and functions
+
+library(tidyverse)
+library(codetools)
+
+metadata_init = read_tsv("metadata_init.tsv")
+
+# Coalesce the ct-value - id 
+#metadata_init = metadata_init %>% 
+#    mutate(ct = coalesce(as.numeric(ct), as.numeric(ss_ct))) 
+if (class(metadata_init$batch_id) == "numeric") {
+metadata_init = metadata_init %>%  
+    mutate(batch_id = sprintf("%.4f",round(batch_id,4)))
+}
+batch_id = metadata_init$batch_id %>% unique
+
+
+# A function that returns a new table number for each run
+tableno_var = 0
+tableno = function() {
+    tableno_var <<- tableno_var + 1
+    tableno_var
+}
+figno_var = 0
+figno = function() {
+    figno_var <<- figno_var + 1
+    figno_var
+}
+```
+
+## Batch `r paste(batch_id)`
+
+#### KMA AUH
+
+------
+
+*Tabel `r tableno()`: Overordnet statistik.*
+
+```{r echo=F, message=F, warning=F}
+
+metadata_init %>% 
+    group_by(batch_id, very_long_batch_id, batch_sum_reads, batch_unclassified_reads, batch_unclassified_reads_prop, batch_hours_sequencing, batch_million_reads_per_day, batch_control_stamp, batch_control_error_messages) %>% 
+    summarize(plates = paste(batch_id %>% unique, collapse = ", ")) %>% 
+    ungroup() %>% 
+    separate(very_long_batch_id, c("date", "time", "minion", "flowcell", "arbhash"), sep = "_", remove = T) %>%
+    #mutate_at(dplyr::select(where(is.numeric)), round) %>% #
+    mutate_at(vars(batch_unclassified_reads_prop, batch_hours_sequencing, batch_million_reads_per_day), round, digits = 2) %>% 
+    mutate_all(as.character) %>% 
+    pivot_longer(everything()) %>%
+    knitr::kable()
+```
+
+
+*Tabel `r tableno()`: Antal prøver per kontroltype.*
+
+
+```{r echo=F, message=F, warning=F}
+
+metadata_init %>% 
+    group_by(type) %>% 
+    summarize(count = length(type)) %>%  
+    ungroup() %>% 
+    arrange(desc(count)) %>% 
+    knitr::kable()
+
+```
+
+*Tabel `r tableno()`: Prøvelisteoversigt. For flere informationer (fx. prøvenumre) henvises til `~/clinmicrocore/pappenheim-receiver/output/metadata_init.tsv` på GenomeDK.*
+
+
+```{r echo=F, message=F, warning=F, fig.height = 3, fig.width = 7, cache=TRUE}
+metadata_init %>% 
+    mutate(mads_type = case_when(type == "sample" ~ str_sub(ya_sample_id, 1, 1), # Insert the sample type letter into the table.
+                                 TRUE ~ "")) %>%
+    select(barcode, sample_id, type, `totalMissing` = totalMissing_interpreted, `numberOfReads` = ba_reads) %>%
+    knitr::kable()
+
+```
+
+Genomer er rekonstrueret lokalt på sekventeringsworkstations med [artic minion](https://artic.network).
+
+```{r echo=FALSE, message=F, warning=F}
+try({
+    # This chunk is needed for setting the size of the following plot.
+    fig_height = max(3,
+                    (metadata_init %>% nrow()) * 1)
+    
+    knitr::opts_chunk$set(fig.height = fig_height,
+                          fig.width = 18)
+})
+```
+
+
+```{r depth, echo=F, message=F, warning=F}
+
+depths_file = paste0("../scripts/depths.tsv")
+
+primer_scheme_file = "../primer_schemes/hMPX-2022/V1/hMPX-2022.primer.bed" 
+
+if(file.exists(depths_file) & file.exists(primer_scheme_file)) {
+    write(paste("depths and primer files exist"), stderr())
+    depths_df = read_tsv(depths_file, col_names = c("full_name", "record", "scheme", "position", "depth")) %>% 
+        left_join(metadata_init %>% select(full_name, barcode, type), by = "full_name") %>% 
+        mutate(text = paste0(barcode, "\n", type))
+
+    primer_scheme = read_tsv(primer_scheme_file,
+                             col_names = c("record", "start", "end", "name", "pair", "strand")) %>% 
+        separate(name, into = c("species", "primer_id", "hand", "alt"), sep = "_") 
+    
+    primer_scheme_names = primer_scheme %>% 
+        select(primer_id, start, end, hand) %>%
+        mutate(primer_id = as.numeric(primer_id)) %>% 
+        group_by(primer_id) %>% 
+        summarize(pos = mean(c(start, end))) %>% 
+        
+        # Filter for only a subset of names to avoid overplotting
+        filter(primer_id == 1 | primer_id == 98 | primer_id %% 5 == 0)
+
+    
+    vline_color = "grey50"
+    vline_size = 0.1
+    vline_alpha = 1
+    
+plot_depth = depths_df %>%
+        group_by(text, position) %>%
+        summarize(depth = max(depth)) %>%
+        
+        mutate(above_20x = case_when(depth >= 20 ~ T, 
+                                     TRUE ~ F)) %>% 
+        
+        ggplot() + 
+        
+        # Primer lines
+        geom_vline(aes(xintercept = start), data = primer_scheme, color = "grey75", size = vline_size, alpha = vline_alpha) + 
+        geom_vline(aes(xintercept = end), data = primer_scheme, color = "grey75", size = vline_size, alpha = vline_alpha) +
+    
+        # Depth
+        geom_point(aes(position, depth, color = above_20x), size = 0.05, alpha = 0.7) + 
+        
+        theme_bw() +
+    
+        ylim(0,400) +
+        scale_x_continuous(breaks = primer_scheme_names$pos,
+                           labels = primer_scheme_names$primer_id) +
+        theme(panel.grid.major.x = element_blank(),
+              panel.grid.minor.x = element_blank(),
+              panel.grid.minor.y = element_blank(), 
+              legend.position = "None") +
+        facet_grid(text~.) +
+    labs(x = "amplicon #")
+    
+plot_depth
+
+} else {
+    warning(paste("The depth-figure is not generated, because the depth-file and primer scheme must be present.", batch_id))
+}
+
+
+```
+
+
+
+*Fig. `r figno()`: Dybde for hver nukleotid over alle genomer. Turkis indikerer at dækningen er over 20x, rød indikerer at dækningen er under 20x. Kun prøver, hvor read-mappingen blev gennemført er vist. Dybden er kun målt op til 400x.*
+
+
+
+
+
+------
+
+
+Denne rapport er en del af pipelinen som er udviklet på KMA, AUH.
