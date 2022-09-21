@@ -27,7 +27,7 @@ elif [ -z "$2" ]; then
 else
 
     #clear
-    cd ~/viraligner && conda activate viraligner && snakemake --profile default --use-conda --conda-frontend mamba --config scheme_directory="primer_schemes" scheme_name="hMPX-2022" scheme_version="1" samplesheet="${1}" rundir="${2}" ${3} && echo && cowsay "viraligner_mpx finished successfully, you may now close this window."
+    cd ~/viraligner && touch CoverMon.flag && conda activate viraligner && snakemake --profile default --use-conda --conda-frontend mamba --config scheme_directory="primer_schemes" scheme_name="hMPX-2022" scheme_version="1" samplesheet="${1}" rundir="${2}" ${3} && echo && cowsay "viraligner_mpx finished successfully, you may now close this window."
 fi
 }
 

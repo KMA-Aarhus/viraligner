@@ -85,14 +85,14 @@ metadata_init %>%
 
 ```
 
-*Tabel `r tableno()`: Prøvelisteoversigt. For flere informationer (fx. prøvenumre) henvises til `~/clinmicrocore/pappenheim-receiver/output/metadata_init.tsv` på GenomeDK.*
+*Tabel `r tableno()`: Prøvelisteoversigt.*
 
 
 ```{r echo=F, message=F, warning=F, fig.height = 3, fig.width = 7, cache=TRUE}
 metadata_init %>% 
     mutate(mads_type = case_when(type == "sample" ~ str_sub(ya_sample_id, 1, 1), # Insert the sample type letter into the table.
                                  TRUE ~ "")) %>%
-    select(barcode, sample_id, type, `totalMissing` = totalMissing_interpreted, `numberOfReads` = ba_reads) %>%
+    select(barcode, sample_id, type, 'totalMissing' = totalMissing_interpreted, 'numberOfReads' = ba_reads) %>%
     knitr::kable()
 
 ```

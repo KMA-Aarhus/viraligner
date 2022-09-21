@@ -6,9 +6,13 @@ import glob
 import pandas as pd
 import numpy as np
 from pathlib import Path
+from os.path import isfile, isdir, join, exists, expanduser
+from datetime import datetime
+import time
+import atexit
 
 
-
+configfile: "config.yaml"
 
 print(f"         Viral genome aligner v{__version__}  -  Aarhus Universityhospital  -  Department of Clinical Microbiology")
 print()
@@ -50,6 +54,12 @@ rundir = config["rundir"]
 scheme_directory = config["scheme_directory"]
 scheme_version = config["scheme_version"]
 scheme_name = config["scheme_name"]
+
+# For CoverMon
+reference = config["reference"]
+regions = config["regions"]
+threshold = config["threshold"]
+maxDepth = config["maxDepth"]
 
 if rundir[-1] == "/":
     print("Removing trailing slash from rundir")
@@ -201,10 +211,18 @@ out_base = os.path.join(base_dir, "viralign_output") # out_base is the directory
 # Start CoverMon #
 ##################
 
-print(f"Starting covermon in the background ... ")
-#command = f"cd ~/pappenheim/rampart && snakemake --config fastq_pass_base='{fastq_pass_base}' out_base='{out_base}' batch_id='{batch_id}' --use-conda --cores 1 --quiet > rampart_log.out 2> rampart_log.err &"
-#print(command)
-#os.system(command)
+
+if config["run_monitoring"] and exists(expanduser("~/viraligner/CoverMon.flag")):
+    print(f"Starting covermon in the background ... ")
+    # Now we have all resources to start monitoring in the background
+    os.system("rm ~/viraligner/CoverMon.flag") 
+    print(f"Starting monitoring in the background ... ")
+    cov_mon_sh = open("start_mon.sh", "w")
+    command = f"#!/bin/bash{nl}source ~/miniconda3/etc/profile.d/conda.sh{nl}cd CoverMon{nl}conda activate covermon {nl}python seq_mon.py '{samplesheet}' {rundir} {reference} {threshold} {maxDepth} {regions}"
+    cov_mon_sh.write(command)
+    cov_mon_sh.close()
+    # Start the sequence monitoring in a new terminal
+    os.system("gnome-terminal --tab -- bash start_mon.sh")
 
 ##########################
 # Wait for run to finish #

@@ -1,0 +1,3 @@
+[submodule "CoverMon"]
+	path = CoverMon
+	url = https://github.com/KMA-Aarhus/CoverMon

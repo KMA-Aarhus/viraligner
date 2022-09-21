@@ -3,3 +3,9 @@ rundir: "mpx"
 scheme_directory: "NA"
 scheme_version: "1"
 scheme_name: "NA"
+
+reference: "~/viraligner/primer_schemes/hMPX-2022/V1/hMPX-2022.reference.fasta"
+regions: "~/viraligner/primer_schemes/hMPX-2022/V1/hMPX-2022.insert.bed"
+threshold: 30
+maxDepth: 400
+run_monitoring: True

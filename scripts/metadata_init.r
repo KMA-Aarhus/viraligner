@@ -30,7 +30,7 @@ file_out = args[3]
 # Read the long metadata file #
 ###############################
 
-df_wide = read_delim(paste0(file_prefix,"/",main_batch_id, "_all.tsv"), delim = "\t", col_types = cols(.default = col_character())) %>%
+df_wide = read_delim(paste0("/media/ontseq3/ssd/sc2_sequencing/2022-08-17_MPX/no_sample/20220817_1240_MN36581_FAT29597_fbb5c485/viralign_output/clean_upload_20220817.1240","/",main_batch_id, "_all.tsv"), delim = "\t", col_types = cols(.default = col_character())) %>%
         rename(batch_id = `#batch_id`) %>% 
     mutate_at(vars(batch_id), as.character)  %>% 
   mutate(totalMissing=0)
@@ -69,19 +69,20 @@ df_wide = df_wide %>%
 
 # Read barcode_alignment.tsv which contains the number of reads for each sample
 barcode_alignment = read_delim(paste0(file_prefix,"/",main_batch_id,"_barcode_alignment.tsv"), delim = "\t") %>% 
-    select(barcode = barcode, ba_type = type, ba_reads = target_unclassified, started)
+    select(barcode_base = barcode, ba_type = type, ba_reads = target_unclassified, started) %>% 
+    mutate(barcode= str_replace(barcode_base,"barcode","NB"))
 
 sum_reads = barcode_alignment %>% pull(ba_reads) %>% sum
 unclassified_reads = barcode_alignment %>% filter(ba_type == "na") %>% pull(ba_reads)
 
 # Join barcode_alignment onto df_wide, and add information about the number of reads.
 df_wide_ba = df_wide %>% 
-    left_join(barcode_alignment) %>% 
+    left_join(barcode_alignment) 
+
+df_wide_ba = df_wide_ba %>% 
     mutate(batch_sum_reads = sum_reads,
            batch_unclassified_reads = unclassified_reads, 
            batch_unclassified_reads_prop = unclassified_reads/batch_sum_reads)
-
-
 
 # Read final_summary.txt, which contains information about time.
 terminal_summary = read_delim(paste0(file_prefix,"/",main_batch_id, "_final_summary.txt"), delim = "=", col_names = c("name", "value")) %>% 
