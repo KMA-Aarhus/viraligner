@@ -30,7 +30,7 @@ file_out = args[3]
 # Read the long metadata file #
 ###############################
 
-df_wide = read_delim(paste0("/media/ontseq3/ssd/sc2_sequencing/2022-08-17_MPX/no_sample/20220817_1240_MN36581_FAT29597_fbb5c485/viralign_output/clean_upload_20220817.1240","/",main_batch_id, "_all.tsv"), delim = "\t", col_types = cols(.default = col_character())) %>%
+df_wide = read_delim(paste0(file_prefix,"/",main_batch_id, "_all.tsv"), delim = "\t", col_types = cols(.default = col_character())) %>%
         rename(batch_id = `#batch_id`) %>% 
     mutate_at(vars(batch_id), as.character)  %>% 
   mutate(totalMissing=0)
