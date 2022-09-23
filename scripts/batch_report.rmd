@@ -1,13 +1,11 @@
 ---
 title: "ONT batchsekventeringsrapport"
-
 output:
   html_document:
     toc: False
     toc_depth: 2
 editor_options: 
   chunk_output_type: console
-  cache: True
 css: "max-width: 5000px; margin: auto; padding: 1em; line-height: 20px"
 ---
 <style type="text/css">
@@ -88,7 +86,7 @@ metadata_init %>%
 *Tabel `r tableno()`: Prøvelisteoversigt.*
 
 
-```{r echo=F, message=F, warning=F, fig.height = 3, fig.width = 7, cache=TRUE}
+```{r echo=F, message=F, warning=F, fig.height = 3, fig.width = 7}
 metadata_init %>% 
     mutate(mads_type = case_when(type == "sample" ~ str_sub(ya_sample_id, 1, 1), # Insert the sample type letter into the table.
                                  TRUE ~ "")) %>%
